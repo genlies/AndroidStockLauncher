@@ -51,48 +51,48 @@ public class LauncherBackupAgentHelper extends BackupAgentHelper {
         sBackupManager.dataChanged();
     }
 
-    private LauncherBackupHelper mHelper;
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        mHelper = new LauncherBackupHelper(this);
-        addHelper(LAUNCHER_DATA_PREFIX, mHelper);
-    }
-
-    @Override
-    public void onRestore(BackupDataInput data, int appVersionCode, ParcelFileDescriptor newState)
-            throws IOException {
-        if (!Utilities.isLmpOrAbove()) {
-            // No restore for old devices.
-            Log.i(TAG, "You shall not pass!!!");
-            Log.d(TAG, "Restore is only supported on devices running Lollipop and above.");
-            return;
-        }
-
-        // Clear dB before restore
-        LauncherAppState.getLauncherProvider().createEmptyDB();
-
-        boolean hasData;
-        try {
-            super.onRestore(data, appVersionCode, newState);
-            // If no favorite was migrated, clear the data and start fresh.
-            final Cursor c = getContentResolver().query(
-                    LauncherSettings.Favorites.CONTENT_URI_NO_NOTIFICATION, null, null, null, null);
-            hasData = c.moveToNext();
-            c.close();
-        } catch (Exception e) {
-            // If the restore fails, we should do a fresh start.
-            Log.e(TAG, "Restore failed", e);
-            hasData = false;
-        }
-
-        if (hasData && mHelper.restoreSuccessful) {
-            LauncherAppState.getLauncherProvider().clearFlagEmptyDbCreated();
-            LauncherClings.synchonouslyMarkFirstRunClingDismissed(this);
-        } else {
-            if (VERBOSE) Log.v(TAG, "Nothing was restored, clearing DB");
-            LauncherAppState.getLauncherProvider().createEmptyDB();
-        }
-    }
+//    private LauncherBackupHelper mHelper;
+//
+//    @Override
+//    public void onCreate() {
+//        super.onCreate();
+//        mHelper = new LauncherBackupHelper(this);
+//        addHelper(LAUNCHER_DATA_PREFIX, mHelper);
+//    }
+//
+//    @Override
+//    public void onRestore(BackupDataInput data, int appVersionCode, ParcelFileDescriptor newState)
+//            throws IOException {
+//        if (!Utilities.isLmpOrAbove()) {
+//            // No restore for old devices.
+//            Log.i(TAG, "You shall not pass!!!");
+//            Log.d(TAG, "Restore is only supported on devices running Lollipop and above.");
+//            return;
+//        }
+//
+//        // Clear dB before restore
+//        LauncherAppState.getLauncherProvider().createEmptyDB();
+//
+//        boolean hasData;
+//        try {
+//            super.onRestore(data, appVersionCode, newState);
+//            // If no favorite was migrated, clear the data and start fresh.
+//            final Cursor c = getContentResolver().query(
+//                    LauncherSettings.Favorites.CONTENT_URI_NO_NOTIFICATION, null, null, null, null);
+//            hasData = c.moveToNext();
+//            c.close();
+//        } catch (Exception e) {
+//            // If the restore fails, we should do a fresh start.
+//            Log.e(TAG, "Restore failed", e);
+//            hasData = false;
+//        }
+//
+//        if (hasData && mHelper.restoreSuccessful) {
+//            LauncherAppState.getLauncherProvider().clearFlagEmptyDbCreated();
+//            LauncherClings.synchonouslyMarkFirstRunClingDismissed(this);
+//        } else {
+//            if (VERBOSE) Log.v(TAG, "Nothing was restored, clearing DB");
+//            LauncherAppState.getLauncherProvider().createEmptyDB();
+//        }
+//    }
 }
