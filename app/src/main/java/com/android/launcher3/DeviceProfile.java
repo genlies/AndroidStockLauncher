@@ -109,7 +109,9 @@ public class DeviceProfile {
     int allAppsIconTextSizePx;
     int allAppsCellWidthPx;
     int allAppsCellHeightPx;
-    int allAppsCellPaddingPx;
+//    int allAppsCellPaddingPx;
+    int appsCellRowPaddingPx;
+    int appsCellColumnPaddingPx;
     int folderBackgroundOffset;
     int folderIconSizePx;
     int folderCellWidthPx;
@@ -178,8 +180,12 @@ public class DeviceProfile {
                 res.getDimensionPixelSize(R.dimen.dynamic_grid_page_indicator_height);
         defaultPageSpacingPx =
                 res.getDimensionPixelSize(R.dimen.dynamic_grid_workspace_page_spacing);
-        allAppsCellPaddingPx =
-                res.getDimensionPixelSize(R.dimen.dynamic_grid_all_apps_cell_padding);
+//        allAppsCellPaddingPx =
+//                res.getDimensionPixelSize(R.dimen.dynamic_grid_all_apps_cell_padding);
+        appsCellRowPaddingPx =
+                res.getDimensionPixelSize(R.dimen.dynamic_grid_apps_cell_row_padding);
+        appsCellColumnPaddingPx =
+                res.getDimensionPixelSize(R.dimen.dynamic_grid_apps_cell_column_padding);
         overviewModeMinIconZoneHeightPx =
                 res.getDimensionPixelSize(R.dimen.dynamic_grid_overview_min_icon_zone_height);
         overviewModeMaxIconZoneHeightPx =
@@ -412,10 +418,10 @@ public class DeviceProfile {
             allAppsNumCols = isLandscape ? allAppsLongEdgeCount : allAppsShortEdgeCount;
         } else {
             allAppsNumRows = (availableHeightPx - pageIndicatorHeightPx) /
-                    (allAppsCellHeightPx + allAppsCellPaddingPx);
+                    (allAppsCellHeightPx + appsCellRowPaddingPx);
             allAppsNumRows = Math.max(minEdgeCellCount, Math.min(maxRows, allAppsNumRows));
             allAppsNumCols = (availableWidthPx) /
-                    (allAppsCellWidthPx + allAppsCellPaddingPx);
+                    (allAppsCellWidthPx + appsCellColumnPaddingPx);
             allAppsNumCols = Math.max(minEdgeCellCount, Math.min(maxCols, allAppsNumCols));
         }
     }
