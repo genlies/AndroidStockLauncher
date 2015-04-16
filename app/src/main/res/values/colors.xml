@@ -37,4 +37,7 @@
     <color name="widget_text_panel">#FF374248</color>
 
     <color name="wallpaper_picker_translucent_gray">#66000000</color>
+
+    <!-- unread counting circle -->
+    <color name="infomation_count_circle_color">#F44336</color>
 </resources>

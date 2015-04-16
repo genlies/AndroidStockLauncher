@@ -121,6 +121,10 @@ public class LauncherAppState implements DeviceProfile.DeviceProfileCallbacks {
         filter.addAction(SearchManager.INTENT_ACTION_SEARCHABLES_CHANGED);
         sContext.registerReceiver(mModel, filter);
 
+        filter = new IntentFilter();
+        filter.addAction(LauncherModel.ACTION_UNREAD_CHANGED);
+        sContext.registerReceiver(mModel, filter);
+
         // Register for changes to the favorites
         ContentResolver resolver = sContext.getContentResolver();
         resolver.registerContentObserver(LauncherSettings.Favorites.CONTENT_URI, true,

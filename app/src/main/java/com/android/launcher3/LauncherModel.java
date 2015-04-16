@@ -178,6 +178,9 @@ public class LauncherModel extends BroadcastReceiver
     static final HashMap<UserHandleCompat, HashSet<String>> sPendingPackages =
             new HashMap<UserHandleCompat, HashSet<String>>();
 
+    public static final String ACTION_UNREAD_CHANGED =
+            "com.android.launcher3.action.UNREAD_CHANGED";
+
     // </ only access in worker thread >
 
     private IconCache mIconCache;
@@ -217,6 +220,58 @@ public class LauncherModel extends BroadcastReceiver
         public void onPageBoundSynchronously(int page);
         public void dumpLogsToLocalData();
     }
+
+    private HashMap<ComponentName, UnreadInfo> unreadChangedMap =
+            new HashMap<ComponentName, LauncherModel.UnreadInfo>();
+
+    private class UnreadInfo {
+        ComponentName mComponentName;
+        int mUnreadNum;
+
+        public UnreadInfo(ComponentName componentName, int unreadNum) {
+            mComponentName = componentName;
+            mUnreadNum = unreadNum;
+        }
+    }
+
+    private class UnreadNumberChangeTask implements Runnable {
+        public void run() {
+            ArrayList<UnreadInfo> unreadInfos = new ArrayList<LauncherModel.UnreadInfo>();
+            synchronized (unreadChangedMap) {
+                unreadInfos.addAll(unreadChangedMap.values());
+                unreadChangedMap.clear();
+            }
+
+            Context context = mApp.getContext();
+            final Callbacks callbacks = mCallbacks != null ? mCallbacks.get() : null;
+            if (callbacks == null) {
+                Log.w(TAG, "Nobody to tell about the new app.  Launcher is probably loading.");
+                return;
+            }
+
+            final ArrayList<AppInfo> unreadChangeFinal = new ArrayList<AppInfo>();
+            for (UnreadInfo uInfo : unreadInfos) {
+                AppInfo info = mBgAllAppsList.unreadNumbersChanged(context,
+                        uInfo.mComponentName, uInfo.mUnreadNum);
+                if (info != null) {
+                    unreadChangeFinal.add(info);
+                }
+            }
+
+            if (unreadChangeFinal.isEmpty()) return;
+
+            mHandler.post(new Runnable() {
+                public void run() {
+                    Callbacks cb = mCallbacks != null ? mCallbacks.get() : null;
+                    if (callbacks == cb && cb != null) {
+                        callbacks.bindAppsUpdated(unreadChangeFinal);
+                    }
+                }
+            });
+        }
+    }
+
+    private UnreadNumberChangeTask mUnreadUpdateTask = new UnreadNumberChangeTask();
 
     public interface ItemInfoFilter {
         public boolean filterItem(ItemInfo parent, ItemInfo info, ComponentName cn);
@@ -1281,23 +1336,35 @@ public class LauncherModel extends BroadcastReceiver
             // If we have changed locale we need to clear out the labels in all apps/workspace.
             forceReload();
         } else if (Intent.ACTION_CONFIGURATION_CHANGED.equals(action)) {
-             // Check if configuration change was an mcc/mnc change which would affect app resources
-             // and we would need to clear out the labels in all apps/workspace. Same handling as
-             // above for ACTION_LOCALE_CHANGED
-             Configuration currentConfig = context.getResources().getConfiguration();
-             if (mPreviousConfigMcc != currentConfig.mcc) {
-                   Log.d(TAG, "Reload apps on config change. curr_mcc:"
-                       + currentConfig.mcc + " prevmcc:" + mPreviousConfigMcc);
-                   forceReload();
-             }
-             // Update previousConfig
-             mPreviousConfigMcc = currentConfig.mcc;
+            // Check if configuration change was an mcc/mnc change which would affect app resources
+            // and we would need to clear out the labels in all apps/workspace. Same handling as
+            // above for ACTION_LOCALE_CHANGED
+            Configuration currentConfig = context.getResources().getConfiguration();
+            if (mPreviousConfigMcc != currentConfig.mcc) {
+                Log.d(TAG, "Reload apps on config change. curr_mcc:"
+                        + currentConfig.mcc + " prevmcc:" + mPreviousConfigMcc);
+                forceReload();
+            }
+            // Update previousConfig
+            mPreviousConfigMcc = currentConfig.mcc;
         } else if (SearchManager.INTENT_GLOBAL_SEARCH_ACTIVITY_CHANGED.equals(action) ||
-                   SearchManager.INTENT_ACTION_SEARCHABLES_CHANGED.equals(action)) {
+                SearchManager.INTENT_ACTION_SEARCHABLES_CHANGED.equals(action)) {
             Callbacks callbacks = getCallback();
             if (callbacks != null) {
                 callbacks.bindSearchablesChanged();
             }
+        } else if (ACTION_UNREAD_CHANGED.equals(action)) {
+            String packageName = intent.getStringExtra("packageName");
+            ComponentName componentName = mBgAllAppsList
+                    .getComponentNameForPackageName(packageName);
+            int unreadNum = intent.getIntExtra("count", 0);
+
+            if (componentName == null) return;
+            synchronized (unreadChangedMap) {
+                unreadChangedMap.put(componentName, new UnreadInfo(componentName, unreadNum));
+            }
+            sWorker.removeCallbacks(mUnreadUpdateTask);
+            sWorker.post(mUnreadUpdateTask);
         }
     }
 
